@@ -10,8 +10,12 @@
                     <div class="card-body">
                         @if(Google2FA::isActivated())
                             <div>2FA is activated!</div>
+                            <span>To deactivate 2FA, click:</span>
+                            <a href="{{ route('2fa.deactivate') }}">
+                                {{ __('deactivate 2FA') }}
+                            </a>
                         @else
-                            <form method="POST" action="{{ route('2fa.assign') }}">
+                            <form method="POST" action="{{ route('2fa.activate') }}">
                                 @csrf
 
                                 <div class="form-group row">

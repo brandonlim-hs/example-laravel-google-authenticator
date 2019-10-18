@@ -73,4 +73,21 @@ class Google2FAController extends Controller
         $user->save();
         return view('auth.google2fa.activate');
     }
+
+    /**
+     * Deactivate 2FA.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function deactivate2FA(Request $request)
+    {
+        $user = $request->user();
+
+        //make secret column blank
+        $user->google2fa_secret = null;
+        $user->save();
+
+        return view('auth.google2fa.deactivate');
+    }
 }
