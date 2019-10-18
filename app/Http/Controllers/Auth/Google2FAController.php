@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\User;
 use Google2FA;
+use Illuminate\Foundation\Auth\RedirectsUsers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class Google2FAController extends Controller
 {
+    use RedirectsUsers;
+
     /**
      * Create a new controller instance.
      *
@@ -16,7 +21,7 @@ class Google2FAController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['login2FA', 'verify2FA']);
     }
 
     /**
@@ -89,5 +94,42 @@ class Google2FAController extends Controller
         $user->save();
 
         return view('auth.google2fa.deactivate');
+    }
+
+    /**
+     * Show the login with 2FA page.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function login2FA()
+    {
+        return view('auth.google2fa.login');
+    }
+
+    /**
+     * Verify the 2FA code.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function verify2FA(Request $request)
+    {
+        $userId = $request->session()->pull('user_id');
+        $user = User::find($userId);
+        $otp = $request->get('one_time_password');
+
+        if (!$user || !Google2FA::verifyGoogle2FA($user->google2fa_secret, $otp)) {
+            // store secret in the session only for the next request
+            $request->session()->reflash();
+            // re-flash request inputs
+            $request->flash();
+
+            throw ValidationException::withMessages([
+                'email' => [trans('auth.failed')],
+            ])->redirectTo(route('login'));
+        }
+
+        Auth::loginUsingId($userId);
+        return redirect()->intended($this->redirectPath());
     }
 }

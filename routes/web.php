@@ -26,5 +26,7 @@ Auth::routes();
 Route::get('/2fa/activate', [Google2FAController::class, 'activate2FA'])->name('2fa.activate');
 Route::post('/2fa/activate', [Google2FAController::class, 'assign2FA']);
 Route::get('/2fa/deactivate', [Google2FAController::class, 'deactivate2FA'])->name('2fa.deactivate');
+Route::get('/2fa/login', [Google2FAController::class, 'login2FA'])->name('2fa.login');
+Route::post('/2fa/login', [Google2FAController::class, 'verify2FA']);
 
 Route::get('/home', 'HomeController@index')->name('home');
