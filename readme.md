@@ -1,74 +1,111 @@
-<p align="center"><img src="https://res.cloudinary.com/dtfbvvkyp/image/upload/v1566331377/laravel-logolockup-cmyk-red.svg" width="400"></p>
+# Laravel 6 + Google Authenticator 2FA
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+Example Laravel project with Google Authenticator 2FA
 
-## About Laravel
+### Dependencies
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **[laravel/ui](https://github.com/laravel/ui)** to install the frontend scaffolding
+- **[pragmarx/google2fa-laravel](https://github.com/antonioribeiro/google2fa-laravel)** to enable Google 2FA secret and QR code
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Keys files
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- `app/Http/Controllers/Auth/Google2FAController.php`
+- `app/Http/Controllers/Auth/LoginController.php`
+- `database/migrations/2019_10_18_001813_add_google2fa_secret_to_users_table.php`
+- `resources/views/auth/google2fa/activate.blade.php`
+- `resources/views/auth/google2fa/deactivate.blade.php`
+- `resources/views/auth/google2fa/login.blade.php`
+- `routes/web.php`
 
-## Learning Laravel
+### Steps to set up
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+#### Set up Google Authenticator 2FA
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Create [Laravel 6 project](https://laravel.com/docs/6.x/installation#installing-laravel)
+    ```sh
+    laravel new my-project
+    cd my-project
+    ```
 
-## Laravel Sponsors
+2. Install the [Laravel frontend scaffolding](https://laravel.com/docs/6.x/authentication#included-routing)
+    ```sh
+    composer require laravel/ui --dev
+    php artisan ui vue --auth
+    npm install & npm run dev
+    ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+3. Install pragmarx/google2fa-laravel to enable 2FA
+    ```sh
+    composer require pragmarx/google2fa-laravel --dev
+    ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- [UserInsights](https://userinsights.com)
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
-- [User10](https://user10.com)
-- [Soumettre.fr](https://soumettre.fr/)
-- [CodeBrisk](https://codebrisk.com)
-- [1Forge](https://1forge.com)
-- [TECPRESSO](https://tecpresso.co.jp/)
-- [Runtime Converter](http://runtimeconverter.com/)
-- [WebL'Agence](https://weblagence.com/)
-- [Invoice Ninja](https://www.invoiceninja.com)
-- [iMi digital](https://www.imi-digital.de/)
-- [Earthlink](https://www.earthlink.ro/)
-- [Steadfast Collective](https://steadfastcollective.com/)
-- [We Are The Robots Inc.](https://watr.mx/)
-- [Understand.io](https://www.understand.io/)
-- [Abdel Elrafa](https://abdelelrafa.com)
-- [Hyper Host](https://hyper.host)
-- [Appoly](https://www.appoly.co.uk)
-- [OP.GG](https://op.gg)
+4. Publish the config file if custom settings are required (optional)
+    ```sh
+    php artisan vendor:publish --provider="PragmaRX\Google2FALaravel\ServiceProvider"
+    ```
 
-## Contributing
+5. Create database migration to store 2FA secret
+    ```sh
+    php artisan make:migration add_google2fa_secret_to_users_table
+    ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+    Edit migration file
+    ```diff
+    Schema::table('users', function (Blueprint $table) {
+    -   //
+    +   $table->string('google2fa_secret')->nullable()->after('password');
+    });
+    ```
+    
+    ```diff
+    Schema::table('users', function (Blueprint $table) {
+    -   //
+    +   $table->dropColumn('google2fa_secret');
+    });
+    ```
 
-## Security Vulnerabilities
+#### Allow user to activate 2FA
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Edit `routes/web.php`
+    ```diff
+    + Route::get('/2fa/activate', [Google2FAController::class, 'activate2FA'])->name('2fa.activate');
+    + Route::post('/2fa/activate', [Google2FAController::class, 'assign2FA']);
+    ```
 
-## License
+2. Activation flow. See `app/Http/Controllers/Auth/Google2FAController.php`
+    1. Generate secret key
+    2. Save to session temporarily
+    3. Generate QR code
+    4. Show QR code and secret to user
+    5. User install Google 2FA app on mobile device (if not installed)
+    6. User scan QR code (or, manually add secret)
+    7. User input 2FA code to verify
+    8. If 2FA code is not verified, show error and repeat step iv
+    9. If 2FA code is verified, save 2FA secret to user - activation is complete
 
-The Laravel framework is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+3. Add view to activate 2FA. See `resources/views/auth/google2fa/activate.blade.php`
+
+#### Allow user to deactivate 2FA
+
+1. Edit `routes/web.php`
+    ```diff
+    + Route::get('/2fa/deactivate', [Google2FAController::class, 'deactivate2FA'])->name('2fa.deactivate');
+    ```
+
+2. Delete 2FA secret from user. See `app/Http/Controllers/Auth/Google2FAController.php`
+
+3. Add view to deactivate 2FA. See `resources/views/auth/google2fa/deactivate.blade.php`
+
+#### Allow user to verify 2FA
+
+1. Edit `routes/web.php`
+    ```diff
+    + Route::get('/2fa/login', [Google2FAController::class, 'login2FA'])->name('2fa.login');
+    + Route::post('/2fa/login', [Google2FAController::class, 'verify2FA']);
+    ```
+
+2. Redirect user to 2FA form after login with password. See `app/Http/Controllers/Auth/LoginController.php`
+
+3. Verify 2FA code, and login user if successful. See `app/Http/Controllers/Auth/Google2FAController.php`
+
+4. Add views to login with 2FA. See `resources/views/auth/google2fa/login.blade.php`
