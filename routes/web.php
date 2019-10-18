@@ -11,10 +11,19 @@
 |
 */
 
+use App\Http\Controllers\Auth\Google2FAController;
+use Illuminate\Support\Facades\Route;
+
 Route::get('/', function () {
     return view('welcome');
 });
 
 Auth::routes();
+
+/*
+ * Google 2FA routes
+ */
+Route::get('/2fa/activate', [Google2FAController::class, 'activate2FA'])->name('2fa.activate');
+Route::post('/2fa/activate', [Google2FAController::class, 'assign2FA'])->name('2fa.assign');
 
 Route::get('/home', 'HomeController@index')->name('home');
